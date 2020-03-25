@@ -10,15 +10,25 @@ class MemoryManager {
         int test();
 
     private:
-        int handleSystemSnapshotError(HANDLE systemSnapshot);
+        HANDLE getSystemSnapshot();
         int saveNextProcessInfo(HANDLE systemSnapshot, LPPROCESSENTRY32 processInfo);
         void printAllProcesses(HANDLE systemSnapshot);
         void printProcessInfo(PROCESSENTRY32 processInfo);
 };
 
-int MemoryManager::test() {
+HANDLE MemoryManager::getSystemSnapshot() {
     HANDLE systemSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (handleSystemSnapshotError(systemSnapshot) == EXIT_FAILURE) {
+    if (systemSnapshot == INVALID_HANDLE_VALUE) {
+        const DWORD errorCode = GetLastError();
+        std::cerr << "Error creating system snapshot - Error Code: " << errorCode << '\n';
+        return NULL;
+    }
+    return systemSnapshot;
+}
+
+int MemoryManager::test() {
+    HANDLE systemSnapshot = getSystemSnapshot();
+    if (systemSnapshot == NULL) {
         return EXIT_FAILURE;
     }
 
@@ -56,16 +66,6 @@ int MemoryManager::saveNextProcessInfo(HANDLE systemSnapshot, LPPROCESSENTRY32 p
     }
     CloseHandle(systemSnapshot);
     return EXIT_FAILURE;
-}
-
-int MemoryManager::handleSystemSnapshotError(HANDLE systemSnapshot) {
-    if (systemSnapshot == INVALID_HANDLE_VALUE) {
-        const DWORD errorCode = GetLastError();
-        std::cerr << "Error creating system snapshot - Error Code: " << errorCode << '\n';
-        CloseHandle(systemSnapshot);
-        return EXIT_FAILURE;
-    }
-    return EXIT_SUCCESS;
 }
 
 int main() {
